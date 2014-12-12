@@ -1,0 +1,21 @@
+libfluff is a general purpose library containing a number of useful modules
+for portability and ease of use.
+
+For the most part, the modules in libfluff employ encapsulation.
+
+All defined symbols in the libfluff headers begin with fluff_ or Fluff.
+
+Modules also extensively use the built in memory manager fluff/mm. If memory
+usage is a concern, use the function in fluff/mm to disable caching.
+
+List of modules:
+  - data: Defines a few types used by the other modules
+  - exception: Defines the internal error handling mechanism and traceback
+        functionality, which is exceptionally useful in debugging library
+        errors
+  - mm: Defines a caching memory manager
+  - network: Defines high-level event-based networking functionality
+  - packet: Defines even higher-level event-based networking
+  - random: Defines a pseudo-random number generator
+  - set: Defines a number of set data types for specific needs
+  - socket: Defines a portable interface to system networking 
