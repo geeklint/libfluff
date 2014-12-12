@@ -1,3 +1,21 @@
+/*
+	Copyright 2014 Sky Leonard
+	This file is part of libfluff.
+
+    libfluff is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    libfluff is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with libfluff.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef FLUFF_PACKET_H_
 #define FLUFF_PACKET_H_
 
@@ -34,16 +52,19 @@ typedef (*FluffPacketHandler)(
 
 /*
  * Create a new packet definition collection
+ * Return the new object on success, NULL on failure
  */
 struct FluffPacketDefinition * fluff_packet_definition_new();
 
 /*
  * Load packet definitions from file
+ * Return 0 on success, -1 on failure
  */
 int fluff_packet_load(struct FluffPacketDefinition *, char * filename);
 
 /*
  * Add a single packet definition
+ * Return 0 on success, -1 on failure
  */
 int fluff_packet_add(
 		struct FluffPacketDefinition *, char id, char * def, int c, int s);
@@ -66,11 +87,13 @@ void fluff_packet_server(
 
 /*
  * Create a new client
+ * Return the new client on success, NULL on failure
  */
 struct FluffPacketClient * fluff_packet_client();
 
 /*
  * Connect to a host
+ * Return 0 on success, -1 on failure
  */
 int fluff_packet_connect(
 		struct FluffPacketClient *,
@@ -81,6 +104,7 @@ int fluff_packet_connect(
 
 /*
  * Run client
+ * Return 0 on success, -1 on failure
  */
 int fluff_packet_client_run(struct FluffPacketClient *);
 

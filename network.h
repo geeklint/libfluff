@@ -1,3 +1,21 @@
+/*
+	Copyright 2014 Sky Leonard
+	This file is part of libfluff.
+
+    libfluff is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    libfluff is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with libfluff.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef FLUFF_NETWORK_H_
 #define FLUFF_NETWORK_H_
 
@@ -21,7 +39,13 @@ struct FluffNetworkHandle;
  */
 typedef void (*FluffNetworkCallback)(struct FluffNetworkHandle *);
 
-
+/*
+ * Send Options:
+ * - None: Buffers will not be freed
+ * - Copy: Buffers will be copied and the copy will be freed (default)
+ * - Free: This function takes an additional arg (*free)(void *)
+ *       which will be called to free the Buffer
+ */
 enum FluffNetworkSendOpt {
     FluffNetworkSendOptNone,
     FluffNetworkSendOptCopy,
@@ -30,11 +54,7 @@ enum FluffNetworkSendOpt {
 
 /*
  * Create a new network instance
- * Send Options:
- * - None: Buffers will not be freed
- * - Copy: Buffers will be copied and the copy will be freed (default)
- * - Free: This function takes an additional arg (*free)(void *)
- *       which will be called to free the Buffer
+ * Returns new network on success, NULL on failure
  */
 struct FluffNetwork * fluff_network_new(enum FluffNetworkSendOpt, ...);
 
@@ -42,6 +62,7 @@ struct FluffNetwork * fluff_network_new(enum FluffNetworkSendOpt, ...);
  * Bind to a service and start accepting connections
  * The callback will be called when a once each time a client connects
  * and should setup recv and error callbacks
+ * Return 0 on success, -1 on failure
  */
 int fluff_network_bind(
 		struct FluffNetwork *,
@@ -52,6 +73,7 @@ int fluff_network_bind(
  * Connect to a remote service
  * The callback will be called once when a connection is successfully
  * established and should setup recv and error callbacks
+ * Return 0 on success, -1 on failure
  */
 int fluff_network_connect(
 		struct FluffNetwork *,
@@ -61,6 +83,7 @@ int fluff_network_connect(
 /*
  * Poll for events
  * A timeout of less than 0 causes indefinite blocking
+ * Return 0 on success, -1 on failure
  */
 int fluff_network_poll(struct FluffNetwork *, double timeout);
 
@@ -95,20 +118,23 @@ void fluff_network_handle_set_recv_callback(
 void fluff_network_handle_set_error_callback(
 		struct FluffNetworkHandle *, FluffNetworkCallback);
 
-/* Receive data from a handle */
+/*
+ * Receive data from a handle
+ * Return the number of bytes received on success, -1 on failure
+ */
 long int fluff_network_recv(
     struct FluffNetworkHandle *, void * buf, size_t len);
 
-/* Send data to a handle */
+/*
+ * Send data to a handle
+ * Return 0 on success, -1 on failure
+ */
 long int fluff_network_send(
 		struct FluffNetworkHandle *, void * buf, size_t len);
 
-/* Disconnect and close handle */
-void fluff_network_disconnect(struct FluffNetworkHandle *);
-
 /*
- * Set network module to use fluff_mm
+ * Disconnect and close handle
  */
-void fluff_network_use_mm(int use);
+void fluff_network_disconnect(struct FluffNetworkHandle *);
 
 #endif /* FLUFF_NETWORK_H_ */

@@ -1,11 +1,25 @@
+/*
+	Copyright 2014 Sky Leonard
+	This file is part of libfluff.
+
+    libfluff is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    libfluff is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with libfluff.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef FLUFF_SET_H_
 #define FLUFF_SET_H_
 
 #include "data.h"
-
-/*
- * Every function defined here is O(1), except when noted otherwise
- */
 
 /*
  * Enum Set
@@ -13,32 +27,35 @@
 struct FluffSetEnum;
 
 /*
- * Constructor
+ * Create a new enum set
+ * Returns new enum set on success, NULL on failure
  */
 struct FluffSetEnum * fluff_set_enum_new(unsigned int max);
 
 /*
- * Liberator
+ * Invalidate the enum set
  */
 void fluff_set_enum_free(struct FluffSetEnum *);
 
 /*
- * Count method
+ * Get number of values in the set
+ * Return the cardinality of the enum set
  */
 unsigned int fluff_set_enum_count(struct FluffSetEnum *);
 
 /*
- * Add method
+ * Add a value to the enum set
  */
 void fluff_set_enum_add(struct FluffSetEnum *, unsigned int n);
 
 /*
- * Contains method
+ * Check if the enum set contains the specified value
+ * Return 1 if the value is contained, 0 otherwise
  */
 int fluff_set_enum_contains(struct FluffSetEnum *, unsigned int n);
 
 /*
- * Remove method
+ * Remove a value from the enum set
  */
 void fluff_set_enum_remove(struct FluffSetEnum *, unsigned int n);
 
@@ -48,33 +65,35 @@ void fluff_set_enum_remove(struct FluffSetEnum *, unsigned int n);
 struct FluffSetHash;
 
 /*
- * Constructor
+ * Create a new hash set
  */
 struct FluffSetHash * fluff_set_hash_new(
 		FluffHashFunction, FluffEqualFunction);
 
 /*
- * Liberator
+ * Invalidate the hash set
  */
 void fluff_set_hash_free(struct FluffSetHash *, FluffFreeFunction);
 
 /*
- * Count method
+ * Get number of values in the set
+ * Return the cardinality of the hash set
  */
 unsigned int fluff_set_hash_count(struct FluffSetHash *);
 
 /*
- * Add method
+ * Add a value to the hash set
  */
 void fluff_set_hash_add(struct FluffSetHash *, union FluffData);
 
 /*
- * Contains method
+ * Check if the hash set contains the specified value
+ * Return 1 if the value is contained, 0 otherwise
  */
 int fluff_set_hash_contains(struct FluffSetHash *, union FluffData);
 
 /*
- * Remove method
+ * Remove a value from the hash set
  */
 union FluffData fluff_set_hash_remove(struct FluffSetHash *, union FluffData);
 
@@ -86,97 +105,92 @@ struct FluffSetElementElement;
 struct FluffSetElementIter;
 
 /*
- * Constructor
+ * Create a new element set
  */
 struct FluffSetElement * fluff_set_element_new();
 
 /*
- * Liberator
+ * Invalidate the element set
  */
 void fluff_set_element_free(struct FluffSetElement *);
 
 /*
- * Count method
+ * Get number of values in the set
+ * Return the cardinality of the element set
  */
 unsigned int fluff_set_element_count(struct FluffSetElement *);
 
 /*
- * Add method
+ * Add an element to the element set
  */
 void fluff_set_element_add(
 		struct FluffSetElement *, struct FluffSetElementElement *);
 
 /*
- * Contains method
+ * Check if the element set contains the specified value
+ * Return 1 if the value is contained, 0 otherwise
  */
 int fluff_set_element_contains(
 		struct FluffSetElement *, struct FluffSetElementElement *);
 
 /*
- * Remove method
+ * Remove an element from the hash set
  */
 void fluff_set_element_remove(
 		struct FluffSetElement *, struct FluffSetElementElement *);
 
 /*
- * Pop method
+ * Remove and return an arbitrary element from the element set
  */
 struct FluffSetElementElement * fluff_set_element_pop(
 		struct FluffSetElement *);
 
 /*
- * Iter method
+ * Get an iterator over the element set
+ * While the iterator is active, no operations may be performed on the
+ * set directly.
  */
 struct FluffSetElementIter * fluff_set_element_iter(
 		struct FluffSetElement *);
 
 /*
- * Element Set Element
- */
-
-/*
- * Constructor
+ * Create a new element set element
  */
 struct FluffSetElementElement * fluff_set_element_element_new(
 		struct FluffSetElement *);
 
 /*
- * Liberator
+ * Invalidate an element set element
  */
 void fluff_set_element_element_free(struct FluffSetElementElement *);
 
 /*
- * Data setter
+ * Set the data associated with the element set element
  */
 void fluff_set_element_element_data_set(
 		struct FluffSetElementElement *, union FluffData data);
 
 /*
- * Data getter
+ * Get the data associated with the element set element
  */
 union FluffData fluff_set_element_element_data_get(
 		struct FluffSetElementElement *);
 
 /*
- * Element Set Iter
- */
-
-/*
- * Liberator
+ * Release and invalidate the element set iterator
  */
 void fluff_set_element_iter_free(struct FluffSetElementIter *);
 
 /*
- * Next method
+ * Get the next element from the iterator
  */
 struct FluffSetElementElement * fluff_set_element_iter_next(
 		struct FluffSetElementIter *);
 
 /*
- * Removelast method
+ * Remove the last element returned from the iterator from the set
  */
 void fluff_set_element_iter_removelast(
 		struct FluffSetElementIter *);
-
 
 #endif /* FLUFF_SET_H_ */

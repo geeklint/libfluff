@@ -1,3 +1,21 @@
+/*
+	Copyright 2014 Sky Leonard
+	This file is part of libfluff.
+
+    libfluff is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    libfluff is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with libfluff.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef FLUFF_DATA_H_
 #define FLUFF_DATA_H_
 
@@ -6,6 +24,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+/*
+ * Value used for hash functions.
+ * Is an unsigned integer type guaranteed to be exactly 32 bits
+ */
 typedef uint32_t FluffHashValue;
 
 /*
@@ -27,7 +49,6 @@ union FluffData {
 	unsigned long long d_u_long_long;
 	float d_float;
 	double d_double;
-	long double d_long_double;
 	size_t d_size_t;
 	ptrdiff_t d_ptrdiff_t;
 	FluffHashValue d_hash;
@@ -40,6 +61,7 @@ typedef void (*FluffFreeFunction)(void *);
 
 /*
  * Equal function prototype
+ * Return 1 if the two parameters are equal, 0 if not
  */
 typedef int (*FluffEqualFunction)(union FluffData, union FluffData);
 
