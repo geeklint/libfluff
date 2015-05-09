@@ -19,83 +19,43 @@
 #ifndef FLUFF_MM_H_
 #define FLUFF_MM_H_
 
-#include <stdlib.h>
-
 #include "data.h"
 
-struct FluffMMType;
-
 /*
- * Create a new managed type
- * Return the new managed type on success, NULL on failure
+ * Free function prototype
  */
-struct FluffMMType * fluff_mm_new(size_t);
-
-/* 
- * Get size of cache
- */
-size_t fluff_mm_cache_size(struct FluffMMType *);
-
-/*
- * Clear object cache. Size is the max size for remaining cache
- */
-void fluff_mm_clear(struct FluffMMType *, size_t size);
-
-/*
- * Allocate a new instance of the type
- * Return the new instance on success, NULL on failure
- */
-void * fluff_mm_alloc(struct FluffMMType *);
-
-/*
- * Free an instance of the type
- */
-void fluff_mm_free(void *);
-
-/*
- * Invalidate the type.
- * This function will clear the cache first
- */
-void fluff_mm_delete(struct FluffMMType *);
-
-/*
- * Enable/Disable caching
- * Disabling essentially turns fluff_mm into pass-through function calls
- */
-void fluff_mm_do_cache(int do_cache);
-
-/*
- * Definition of the new type function
- */
-typedef union FluffData (*FluffMMNewTypeFunction)(size_t);
-
-/*
- * Definition of the allocate function
- */
-typedef void * (*FluffMMAllocFunction)(union FluffData);
+typedef void (*FluffFreeFunction)(void *);
 
 /*
  * Definition of a memory manager
  */
-struct FluffMMDefinition {
-	FluffMMNewTypeFunction f_new_type;
-	FluffMMAllocFunction f_alloc;
+struct FluffMM {
+	union FluffData (*f_type_new)(size_t);
+	void (*f_type_free)(union FluffData);
+	void * (*f_alloc)(union FluffData);
+	void * (*f_alloc_size)(size_t);;
 	FluffFreeFunction f_free;
 };
 
 /*
- * Set the memory manager that fluff_mm uses
+ * Memory manager which will be used by modules if not overridden
+ * Defaults to fluff_mm_cache
  */
-void fluff_mm_set_manager(struct FluffMMDefinition *);
+extern const struct FluffMM * fluff_mm_default;
 
 /*
  * Definition of system malloc/free manager
  */
-extern struct FluffMMDefinition * fluff_mm_definition_system;
+extern const struct FluffMM * const fluff_mm_system;
 
 /*
- * Definition of fluff_mm manager
+ * Definitions of fluff caching manager
  */
-extern struct FluffMMDefinition * fluff_mm_definition_fluff;
+extern const struct FluffMM * const fluff_mm_cache;
+
+/*
+ * Set the memory manager used by the caching memory manager
+ */
+void fuff_mm_cache_setmm(const struct FluffMM *);
 
 #endif /* FLUFF_MM_H_ */

@@ -15,52 +15,94 @@
     You should have received a copy of the GNU General Public License
     along with libfluff.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include "mm.h"
 
-#include <string.h>
+#include <stdlib.h>
 
-struct FluffMMType {
+static union FluffData system_type_new(size_t size){
+	union FluffData as_data;
+
+	as_data.d_size_t = size;
+	return as_data;
+}
+
+static void system_type_free(union FluffData data){
+	// Do nothing
+}
+
+static void * system_alloc(union FluffData as_data){
+	return malloc(as_data.d_size_t);
+}
+
+const struct FluffMM mm_system = {
+		&system_type_new,
+		&system_type_free,
+		&system_alloc,
+		&malloc,
+		&free,
+};
+
+const struct FluffMM * const fluff_mm_system = &mm_system;
+
+struct CacheBlock {
+    struct CacheType * type;
+    struct CacheBlock * next;
+};
+
+struct CacheType {
     union FluffData type;
     size_t size;
-    struct MMBlock * cache;
+    struct CacheBlock * cache;
     size_t count;
 };
 
-struct MMBlock {
-    struct FluffMMType * type;
-    struct MMBlock * next;
-};
+static int prev_mm_need_setup = 1;
+const struct FluffMM * PREV_MM;
 
-static int DO_CACHE = 1;
+static union FluffData type_size;
+static union FluffData block_size;
 
-static struct FluffMMDefinition * PREV_MM; // initialized below
+static void setup_mm(){
+	if (PREV_MM == NULL){
+		PREV_MM = fluff_mm_system;
+	}
+	type_size = PREV_MM->f_type_new(sizeof(struct CacheType));
+	block_size = PREV_MM->f_type_new(sizeof(struct CacheBlock));
+	prev_mm_need_setup = 0;
+}
 
-static union FluffData TYPE_TYPE = {
-		.d_size_t = sizeof(struct FluffMMType)
-};
+#define ENSURE_MM if (prev_mm_need_setup) setup_mm();
 
-struct FluffMMType * fluff_mm_new(size_t size){
-    struct FluffMMType * type;
-    
-    if ((type = PREV_MM->f_alloc(TYPE_TYPE))){
+void fuff_mm_cache_setmm(const struct FluffMM * mm){
+	if (!prev_mm_need_setup){
+		PREV_MM->f_type_free(type_size);
+		PREV_MM->f_type_free(block_size);
+		prev_mm_need_setup = 1;
+	}
+	PREV_MM = mm;
+	setup_mm();
+}
+
+static union FluffData cache_type_new(size_t size){
+    struct CacheType * type;
+    union FluffData data;
+
+    ENSURE_MM;
+
+    if ((type = PREV_MM->f_alloc(type_size))){
     	type->size = size;
-        type->type = PREV_MM->f_new_type(size + sizeof(struct MMBlock));
+        type->type = PREV_MM->f_type_new(size + sizeof(struct CacheBlock));
         type->cache = NULL;
         type->count = 0;
     }
-    
-    return type;
+    data.d_ptr = type;
+    return data;
 }
 
-size_t fluff_mm_cache_size(struct FluffMMType * type){
-    return type->count * type->size;
-}
-
-void fluff_mm_clear(struct FluffMMType * type, size_t size){
-    struct MMBlock * cache, * tcache;
+static void cache_clear(struct CacheType * type, size_t size){
+    struct CacheBlock * cache, * tcache;
     size_t count, tsize;
-    
+
     count = type->count;
     tsize = type->size;
     tcache = type->cache;
@@ -74,9 +116,25 @@ void fluff_mm_clear(struct FluffMMType * type, size_t size){
     type->cache = tcache;
 }
 
-void * fluff_mm_alloc(struct FluffMMType * type){
+static void cache_type_free(union FluffData data){
+	struct CacheType * type;
+
+	type = data.d_ptr;
+    cache_clear(type, 0);
+    PREV_MM->f_free(type);
+}
+
+/*
+static size_t cache_size(struct CacheType * type){
+    return type->count * type->size;
+}
+*/
+
+static void * cache_alloc(union FluffData data){
+	struct CacheType * type;
     void * block;
-    
+
+    type = data.d_ptr;
     if (type->cache){
         block = type->cache;
         type->cache = type->cache->next;
@@ -85,77 +143,44 @@ void * fluff_mm_alloc(struct FluffMMType * type){
         if (!(block = PREV_MM->f_alloc(type->type))){
         	return NULL;
         }
-        ((struct MMBlock *)block)->type = type;
+        ((struct CacheBlock *)block)->type = type;
     }
-    return block + sizeof(struct MMBlock);
+    return block + sizeof(struct CacheBlock);
 }
 
-void fluff_mm_free(void * block){
-    struct FluffMMType * type;
+static void * cache_alloc_size(size_t size){
+    void * block;
 
-	block -= sizeof(struct MMBlock);
-	if (DO_CACHE){
-		type = ((struct MMBlock *)block)->type;
-		((struct MMBlock *)block)->next = type->cache;
+    size += sizeof(struct CacheBlock);
+	if (!(block = PREV_MM->f_alloc_size(size))){
+		return NULL;
+	}
+	((struct CacheBlock *)block)->type = NULL;
+	return block + sizeof(struct CacheBlock);
+}
+
+static void cache_free(void * block){
+    struct CacheType * type;
+
+	block -= sizeof(struct CacheBlock);
+	type = ((struct CacheBlock *)block)->type;
+	if (type == NULL){
+		PREV_MM->f_free(block);
+	} else {
+		((struct CacheBlock *)block)->next = type->cache;
 		type->cache = block;
 		type->count += 1;
-	} else {
-		PREV_MM->f_free(block);
 	}
 }
 
-void fluff_mm_delete(struct FluffMMType * type){
-    fluff_mm_clear(type, 0);
-    PREV_MM->f_free(type);
-}
-
-void fluff_mm_do_cache(int do_cache){
-	DO_CACHE = do_cache;
-}
-
-void fluff_mm_set_manager(struct FluffMMDefinition * prev_mm){
-	PREV_MM = prev_mm;
-	TYPE_TYPE = prev_mm->f_new_type(sizeof(struct FluffMMType));
-}
-
-static union FluffData mm_system_new_type(size_t size){
-	union FluffData as_data;
-
-	as_data.d_size_t = size;
-	return as_data;
-}
-
-static void * mm_system_alloc(union FluffData as_data){
-	return malloc(as_data.d_size_t);
-}
-
-struct FluffMMDefinition mm_system = {
-		&mm_system_new_type,
-		&mm_system_alloc,
-		&free,
+const struct FluffMM mm_cache = {
+		&cache_type_new,
+		&cache_type_free,
+		&cache_alloc,
+		&cache_alloc_size,
+		&cache_free,
 };
 
-struct FluffMMDefinition * fluff_mm_definition_system = &mm_system;
-static struct FluffMMDefinition * PREV_MM = &mm_system;
+const struct FluffMM * const fluff_mm_cache = &mm_cache;
 
-static union FluffData mm_fluff_new_type(size_t size){
-	union FluffData as_data;
-
-	as_data.d_ptr = fluff_mm_new(size);
-	return as_data;
-}
-
-static void * mm_fluff_alloc(union FluffData as_data){
-	return fluff_mm_alloc(as_data.d_ptr);
-}
-
-struct FluffMMDefinition mm_fluff = {
-		&mm_fluff_new_type,
-		&mm_fluff_alloc,
-		&fluff_mm_free,
-};
-
-/*
- * Definition of fluff_mm manager
- */
-struct FluffMMDefinition * fluff_mm_definition_fluff = &mm_fluff;
+const struct FluffMM * fluff_mm_default = &mm_cache;

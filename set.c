@@ -18,12 +18,12 @@
 
 #include "set.h"
 
-#include "mm.h"
+#include <limits.h>
+#include <string.h>
 
 #define TABLE_START 16
 #define ENLARGE .75
 #define SHRINK .25
-#define BITS_PER_BLOCK 32
 
 /*
  * Set types
@@ -31,7 +31,7 @@
 struct FluffSetEnum {
 	int max;
 	int count;
-	uint32_t * bits;
+	char * bits;
 };
 
 struct FluffSetHash {
@@ -67,46 +67,65 @@ struct FluffSetElementIter {
 	struct FluffSetElementElement * next;
 };
 
-
 /*
- * MM
+ * Memory manager
  */
-static struct FluffMMGroup * mm_group = NULL;
-static struct FluffMMType * setenum_size = NULL;
-static struct FluffMMType * sethash_size = NULL;
-static struct FluffMMType * hashel_size = NULL;
-static struct FluffMMType * setelement_size = NULL;
-static struct FluffMMType * element_size = NULL;
-static struct FluffMMType * iter_size = NULL;
 
-static void setup_mm_types(){
-    mm_group = fluff_mm_new_g();
-	setenum_size = fluff_mm_new(sizeof(struct FluffSetEnum), mm_group);
-	sethash_size = fluff_mm_new(sizeof(struct FluffSetHash), mm_group);
-	hashel_size = fluff_mm_new(sizeof(struct HashElement), mm_group);
-	setelement_size = fluff_mm_new(sizeof(struct FluffSetElement), mm_group);
-	element_size = fluff_mm_new(
-			sizeof(struct FluffSetElementElement), mm_group);
-	iter_size = fluff_mm_new(sizeof(struct FluffSetElementIter), mm_group);
+static int mm_need_setup = 1;
+static const struct FluffMM * MM = NULL;
+
+static union FluffData setenum_size;
+static union FluffData sethash_size;
+static union FluffData hashel_size;
+static union FluffData setelement_size;
+static union FluffData element_size;
+static union FluffData iter_size;
+
+static void setup_mm(){
+	if (MM == NULL){
+		MM = fluff_mm_default;
+	}
+    setenum_size = MM->f_type_new(sizeof(struct FluffSetEnum));
+    sethash_size = MM->f_type_new(sizeof(struct FluffSetHash));
+    hashel_size = MM->f_type_new(sizeof(struct HashElement));
+    setelement_size = MM->f_type_new(sizeof(struct FluffSetElement));
+    element_size = MM->f_type_new(sizeof(struct FluffSetElementElement));
+    iter_size = MM->f_type_new(sizeof(struct FluffSetElementIter));
+
 }
 
-#define ENSURE_MM if (!mm_group) setup_mm_types();
+#define ENSURE_MM if (mm_need_setup) setup_mm();
+
+void fluff_set_setmm(const struct FluffMM * mm){
+	if (!mm_need_setup){
+		MM->f_type_free(setenum_size);
+		MM->f_type_free(sethash_size);
+		MM->f_type_free(hashel_size);
+		MM->f_type_free(setelement_size);
+		MM->f_type_free(element_size);
+		MM->f_type_free(iter_size);
+		mm_need_setup = 1;
+	}
+	MM = mm;
+	setup_mm();
+}
 
 /*
  * Enum Set
  */
 struct FluffSetEnum * fluff_set_enum_new(unsigned int max){
 	struct FluffSetEnum * self;
-	unsigned int n_blocks;
+	unsigned int n_bytes;
 
 	ENSURE_MM;
 
-	n_blocks = (max / BITS_PER_BLOCK) + 1;
-	if ((self = fluff_mm_alloc(setenum_size))){
-		if (!(self->bits = calloc(n_blocks, sizeof(uint32_t)))){
-			fluff_mm_free(self);
+	n_bytes = (max + CHAR_BIT - 1) / CHAR_BIT;
+	if ((self = MM->f_alloc(setenum_size))){
+		if (!(self->bits = MM->f_alloc_size(n_bytes))){
+			MM->f_free(self);
 			self = NULL;
 		} else {
+			memset(self->bits, 0, n_bytes);
 			self->max = max;
 			self->count = 0;
 		}
@@ -115,20 +134,25 @@ struct FluffSetEnum * fluff_set_enum_new(unsigned int max){
 }
 
 void fluff_set_enum_free(struct FluffSetEnum * self){
-	free(self->bits);
-	fluff_mm_free(self);
+	MM->f_free(self->bits);
+	MM->f_free(self);
 }
 
 unsigned int fluff_set_enum_count(struct FluffSetEnum * self){
 	return self->count;
 }
 
+static inline int set_enum_contains_base(
+		struct FluffSetEnum * self, unsigned int block, unsigned int n){
+	return self->bits[block] & (1 << n);
+}
+
 void fluff_set_enum_add(struct FluffSetEnum * self, unsigned int n){
 	unsigned int block;
 
-	block = (n / BITS_PER_BLOCK);
-	n -= block * BITS_PER_BLOCK;
-	if (!(self->bits[block] & (1 << n))){
+	block = (n / CHAR_BIT);
+	n %= CHAR_BIT;
+	if (!set_enum_contains_base(self, block, n)){
 		self->count += 1;
 		self->bits[block] |= (1 << n);
 	}
@@ -137,17 +161,17 @@ void fluff_set_enum_add(struct FluffSetEnum * self, unsigned int n){
 int fluff_set_enum_contains(struct FluffSetEnum * self, unsigned int n){
 	unsigned int block;
 
-	block = (n / BITS_PER_BLOCK);
-	n -= block * BITS_PER_BLOCK;
-	return self->bits[block] & (1 << n);
+	block = (n / CHAR_BIT);
+	n %= CHAR_BIT;
+	return set_enum_contains_base(self, block, n);
 }
 
 void fluff_set_enum_remove(struct FluffSetEnum * self, unsigned int n){
 	unsigned int block;
 
-	block = (n / BITS_PER_BLOCK);
-	n -= block * BITS_PER_BLOCK;
-	if (self->bits[block] & (1 << n)){
+	block = (n / CHAR_BIT);
+	n %= CHAR_BIT;
+	if (set_enum_contains_base(self, block, n)){
 		self->count -= 1;
 		self->bits[block] ^= (1 << n);
 	}
@@ -165,12 +189,13 @@ struct FluffSetHash * fluff_set_hash_new(
 
 	ENSURE_MM;
 
-	if ((self = fluff_mm_alloc(sethash_size))){
-		table = calloc(TABLE_START, sizeof(struct HashElement *));
+	if ((self = MM->f_alloc(sethash_size))){
+		table = MM->f_alloc_size(TABLE_START * sizeof(struct HashElement *));
 		if (!table){
-			fluff_mm_free(self);
+			MM->f_free(self);
 			self = NULL;
 		} else {
+			memset(table, 0, TABLE_START * sizeof(struct HashElement *));
 			self->table = table;
 			self->tablesize = TABLE_START;
 			self->count = 0;
@@ -192,7 +217,7 @@ void fluff_set_hash_free(struct FluffSetHash * self, FluffFreeFunction freer){
 			if (freer){
 				freer(to_del->data.d_ptr);
 			}
-			fluff_mm_free(to_del);
+			MM->f_free(to_del);
 		}
 	}
 }
@@ -220,8 +245,10 @@ void fluff_set_hash_add(struct FluffSetHash * self, union FluffData data){
 	self->count += 1;
 	if (self->count * ENLARGE > self->tablesize){
 		new_tablesize = self->tablesize * 2;
-		new_table = calloc(new_tablesize, sizeof(struct HashElement *));
+		new_table = MM->f_alloc_size(
+				new_tablesize * sizeof(struct HashElement *));
 		if (new_table){
+			memset(new_table, 0, new_tablesize * sizeof(struct HashElement *));
 			for (i = 0; i < self->tablesize; ++i){
 				node = self->table[i];
 				while (node){
@@ -232,7 +259,7 @@ void fluff_set_hash_add(struct FluffSetHash * self, union FluffData data){
 					node = node2;
 				}
 			}
-			free(self->table);
+			MM->f_free(self->table);
 			self->table = new_table;
 			self->tablesize = new_tablesize;
 			dest = new_table + (hash % new_tablesize);
@@ -241,7 +268,7 @@ void fluff_set_hash_add(struct FluffSetHash * self, union FluffData data){
 			}
 		}
 	}
-	if ((node = fluff_mm_alloc(hashel_size))){
+	if ((node = MM->f_alloc(hashel_size))){
 		node->data = data;
 		node->hash = hash;
 		node->next = NULL;
@@ -265,6 +292,28 @@ int fluff_set_hash_contains(
 	return 0;
 }
 
+int fluff_set_hash_get(
+		struct FluffSetHash * self,
+		union FluffData data,
+		union FluffData * dest){
+	FluffHashValue hash;
+	struct HashElement * node;
+
+	hash = self->hash(data);
+	node = *(self->table + (hash % self->tablesize));
+	while (node){
+		if (node->hash == hash && self->equal(node->data, data)){
+			if (dest){
+				*dest = node->data;
+			}
+			return 1;
+		}
+		node = node->next;
+	}
+	return 0;
+
+}
+
 union FluffData fluff_set_hash_remove(
 		struct FluffSetHash * self, union FluffData data){
 	FluffHashValue hash;
@@ -276,7 +325,7 @@ union FluffData fluff_set_hash_remove(
 	while ((node = *dest)){
 		if (node->hash == hash && self->equal(node->data, data)){
 			data = node->data;
-			fluff_mm_free(node);
+			MM->f_free(node);
 			*dest = NULL;
 			self->count -= 1;
 			return data;
@@ -295,7 +344,7 @@ struct FluffSetElement * fluff_set_element_new(){
 
 	ENSURE_MM;
 
-	if ((self = fluff_mm_alloc(setelement_size))){
+	if ((self = MM->f_alloc(setelement_size))){
 		self->count = 0;
 		self->head = NULL;
 		self->lock = 0;
@@ -306,7 +355,7 @@ struct FluffSetElement * fluff_set_element_new(){
 
 void fluff_set_element_free(struct FluffSetElement * self){
 	if (!self->lock){
-		fluff_mm_free(self);
+		MM->f_free(self);
 	}
 }
 
@@ -381,7 +430,7 @@ struct FluffSetElementIter * fluff_set_element_iter(
 		struct FluffSetElement * self){
 	struct FluffSetElementIter * iter = NULL;
 
-	if (!self->lock && (iter = fluff_mm_alloc(iter_size))){
+	if (!self->lock && (iter = MM->f_alloc(iter_size))){
 		iter->set = self;
 		iter->prev = NULL;
 		iter->next = self->head;
@@ -394,7 +443,7 @@ struct FluffSetElementElement * fluff_set_element_element_new(
 		struct FluffSetElement * set){
 	struct FluffSetElementElement * self;
 
-	if ((self = fluff_mm_alloc(element_size))){
+	if ((self = MM->f_alloc(element_size))){
 		self->set = set;
 		self->next = NULL;
 		self->prev = NULL;
@@ -404,7 +453,7 @@ struct FluffSetElementElement * fluff_set_element_element_new(
 
 void fluff_set_element_element_free(struct FluffSetElementElement * self){
 	if (!(self->next || self->prev)){
-		fluff_mm_free(self);
+		MM->f_free(self);
 	}
 }
 
@@ -420,7 +469,7 @@ union FluffData fluff_set_element_element_data_get(
 
 void fluff_set_element_iter_free(struct FluffSetElementIter * self){
 	self->set->lock = 0;
-	fluff_mm_free(self);
+	MM->f_free(self);
 }
 
 struct FluffSetElementElement * fluff_set_element_iter_next(

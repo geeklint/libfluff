@@ -59,6 +59,8 @@ struct FluffSocket * fluff_socket_bind(
  * connection has succeeded yet
  * Blocking: Return the connected socket on success, NULL on failure
  * Non-Blocking: Return a new socket on success, NULL on failure
+ * Note: setting userdata on a socket which is not yet connected may result in
+ *   userdata being lost.
  */
 struct FluffSocket * fluff_socket_connect(
 		struct FluffSocketAddr *, int blocking);

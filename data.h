@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
-#include <stdbool.h>
 
 /*
  * Value used for hash functions.
@@ -35,7 +34,6 @@ typedef uint32_t FluffHashValue;
  */
 union FluffData {
 	void * d_ptr;
-	_Bool d_bool;
 	char d_char;
 	signed char d_s_char;
 	unsigned char d_u_char;
@@ -50,14 +48,22 @@ union FluffData {
 	float d_float;
 	double d_double;
 	size_t d_size_t;
-	ptrdiff_t d_ptrdiff_t;
+	char * d_str;
+	int8_t d_int8_t;
+	uint8_t d_uint8_t;
+	int8_t d_int16_t;
+	uint8_t d_uint16_t;
+	int8_t d_int32_t;
+	uint8_t d_uint32_t;
+	int8_t d_int64_t;
+	uint8_t d_uint64_t;
 	FluffHashValue d_hash;
 };
 
 /*
- * Free function prototype
+ * Predfined data value with all fields set to 0
  */
-typedef void (*FluffFreeFunction)(void *);
+extern union FluffData fluff_data_zero;
 
 /*
  * Equal function prototype
@@ -71,13 +77,23 @@ typedef int (*FluffEqualFunction)(union FluffData, union FluffData);
 typedef FluffHashValue (*FluffHashFunction)(union FluffData);
 
 /*
- * Predefined hash function which hashes the value stored in d_hash
+ * Predefined hash function which hashes the value stored in d_uint32_t
  */
-extern FluffHashFunction fluff_hash_hash;
+extern FluffHashFunction fluff_hash_uint32_t;
 
 /*
- * Predfined data value with all fields set to 0
+ * Predefined hash function which hashes the value stored in d_uint64_t
  */
-extern union FluffData fluff_data_zero;
+extern FluffHashFunction fluff_hash_uint64_t;
+
+/*
+ * Predefined hash function which hashes the value stored in d_str
+ */
+extern FluffHashFunction fluff_hash_str;
+
+/*
+ * Hash function to hash a string with a length (e.g. to include null)
+ */
+FluffHashValue fluff_hash_str_with_len(char * str, size_t length);
 
 #endif /* FLUFF_DATA_H_ */

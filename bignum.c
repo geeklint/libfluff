@@ -16,18 +16,31 @@
     along with libfluff.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef DEBUG_H_
-#define DEBUG_H_
+#include "bignum.h"
+/*
+#include <stdint.h>
 
-#ifdef DEBUG
+#define LARGE_32 25000
+#define LARGE_64 109000000000000ull
 
-#include <stdio.h>
-#define LOGD(s) printf("DEBUG %s\n", s);
+static size_t bytes_from_digits(size_t digits){
+	size_t add = 0;
 
-#else
+	if (sizeof(size_t) >= 8){
+		if (digits > LARGE_64){
+			add = bytes_from_digits(digits - LARGE_64);
+			digits = LARGE_64;
+		}
+	} else {
+		if (digits > LARGE_32){
+			add = bytes_from_digits(digits - LARGE_32);
+			digits = LARGE_32;
+		}
+	}
 
-#define LOGD(s)
-
-#endif
-
-#endif /* DEBUG_H_ */
+	digits *= 168783;
+	digits /= 524288;
+	digits += (digits * 3) + 1;
+	return add + (digits / 8) + 1;
+}
+*/

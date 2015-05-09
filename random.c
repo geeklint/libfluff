@@ -23,29 +23,43 @@
 
 #include "mm.h"
 
-static int USE_MM = 0;
-
-static struct FluffMMType * size = NULL;
-
 struct FluffRandom {
     int index;
     uint32_t MT[624];
 };
 
+/*
+ * Memory manager
+ */
+
+static int mm_need_setup = 1;
+static const struct FluffMM * MM = NULL;
+
+static union FluffData random_size;
+
+static void setup_mm(){
+	if (MM == NULL){
+		MM = fluff_mm_default;
+	}
+    random_size = MM->f_type_new(sizeof(struct FluffRandom));
+}
+
+#define ENSURE_MM if (mm_need_setup) setup_mm();
+
+void fluff_random_setmm(const struct FluffMM * mm){
+	if (!mm_need_setup){
+		MM->f_type_free(random_size);
+		mm_need_setup = 1;
+	}
+	MM = mm;
+	setup_mm();
+}
+
 struct FluffRandom * fluff_random_new(uint32_t seed){
     struct FluffRandom * self;
     int i;
     
-    if (USE_MM){
-        if (!size){
-            size = fluff_mm_new(sizeof(struct FluffRandom), NULL);
-        }
-        self = fluff_mm_alloc(size);
-    } else {
-        self = malloc(sizeof(struct FluffRandom));
-    }
-    
-    if (self){
+    if ((self = MM->f_alloc(random_size))){
         self->index = 0;
         self->MT[0] = seed;
         for (i = 1; i < 624; ++i){
@@ -151,25 +165,18 @@ void fluff_random_shuffle(
         default:
             break;
     }
-    temp = malloc(block);
-    while (--count){
-    	index = fluff_random_range(self, 0, count);
-    	memcpy(temp, block * count + array, block);
-    	memcpy(block * count + array, block * index + array, block);
-    	memcpy(block * index + array, temp, block);
+    if ((temp = MM->f_alloc_size(block))){
+		while (--count){
+			index = fluff_random_range(self, 0, count);
+			memcpy(temp, block * count + array, block);
+			memcpy(block * count + array, block * index + array, block);
+			memcpy(block * index + array, temp, block);
+		}
+		MM->f_free(temp);
     }
-    free(temp);
 }
 
 void fluff_random_del(struct FluffRandom * self){
-    if (USE_MM){
-        fluff_mm_free(self);
-    } else {
-        free(self);
-    }
-}
-
-void fluff_random_use_mm(int use){
-    USE_MM = use;
+	MM->f_free(self);
 }
 

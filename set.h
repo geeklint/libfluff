@@ -20,6 +20,7 @@
 #define FLUFF_SET_H_
 
 #include "data.h"
+#include "mm.h"
 
 /*
  * Enum Set
@@ -63,6 +64,7 @@ void fluff_set_enum_remove(struct FluffSetEnum *, unsigned int n);
  * Hash set
  */
 struct FluffSetHash;
+struct FluffSetHashIter;
 
 /*
  * Create a new hash set
@@ -93,9 +95,37 @@ void fluff_set_hash_add(struct FluffSetHash *, union FluffData);
 int fluff_set_hash_contains(struct FluffSetHash *, union FluffData);
 
 /*
+ * Get an equivalent value from the set
+ * Return 1 if the value was successfully fetched, 0 otherwise
+ */
+int fluff_set_hash_get(
+		struct FluffSetHash *, union FluffData, union FluffData *);
+
+/*
  * Remove a value from the hash set
  */
 union FluffData fluff_set_hash_remove(struct FluffSetHash *, union FluffData);
+
+/*
+ * Get an iterator over the hash set
+ * While the iterator is active, no operations may be performed on the
+ * set directly.
+ */
+struct FluffSetHashIter * fluff_set_hash_iter(
+		struct FluffSetHash *);
+
+/*
+ * Release and invalidate the hash set iterator
+ */
+void fluff_set_hash_iter_free(struct FluffSetHashIter *);
+
+/*
+ * Get the next element from the iterator
+ * Return 1 if there was an element to get, 0 if there was not
+ */
+int fluff_set_hash_iter_next(
+		struct FluffSetHashIter *, union FluffData *);
+
 
 /*
  * Element Set

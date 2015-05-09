@@ -18,17 +18,59 @@
 
 #include "data.h"
 
-static FluffHashValue fluff_hash_hash_func(union FluffData data){
+#include <string.h>
+
+union FluffData fluff_data_zero; // Automatically initialized to 0
+
+static FluffHashValue hash_uint32_t_func(union FluffData data){
 	// http://stackoverflow.com/a/12996028
 	FluffHashValue x;
 
-	x = data.d_hash;
+	x = data.d_uint32_t;
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x);
     return x;
 }
 
-FluffHashFunction fluff_hash_hash = &fluff_hash_hash_func;
+FluffHashFunction fluff_hash_uint32_t = &hash_uint32_t_func;
 
-union FluffData fluff_data_zero;
+static FluffHashValue hash_uint64_t_func(union FluffData data){
+	uint64_t x64;
+	uint32_t x32;
+
+	x64 = data.d_uint64_t;
+	x32 = ((x64 >> 32) ^ x64);
+	data.d_uint32_t = x32;
+	return hash_uint32_t_func(data);
+}
+
+FluffHashFunction fluff_hash_uint64_t = &hash_uint64_t_func;
+
+static FluffHashValue hash_str_func(union FluffData data){
+	/* http://www.cse.yorku.ca/~oz/hash.html */
+	FluffHashValue hash = 5381;
+	int c;
+	char * str;
+
+	str = data.d_str;
+
+	while ((c = *str++))
+		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+	return hash;
+}
+
+FluffHashFunction fluff_hash_str = &hash_str_func;
+
+FluffHashValue fluff_hash_str_with_len(char * str, size_t length){
+	/* http://www.cse.yorku.ca/~oz/hash.html */
+	FluffHashValue hash = 5381;
+	size_t i;
+
+	for (i = 0; i < length; ++i){
+		hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + str[i] */
+	}
+
+	return hash;
+}
