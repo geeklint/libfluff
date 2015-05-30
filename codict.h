@@ -1,6 +1,6 @@
 /*
-    Copyright 2014 Sky Leonard
-    This file is part of libfluff.
+	Copyright 2014 Sky Leonard
+	This file is part of libfluff.
 
     libfluff is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,14 +16,9 @@
     along with libfluff.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-data            test
-packet          implement
-network         test
-socket (linux)  test
-socket (win)    implement
-set             implement
-map             implement
-bignum          write
-mm              test
-random          test
-exception       implement
+#ifndef FLUFF_CODICT_H_
+#define FLUFF_CODICT_H_
+
+#include "co.h"
+
+#endif /* FLUFF_CODICT_H_ */

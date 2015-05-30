@@ -51,12 +51,12 @@ union FluffData {
 	char * d_str;
 	int8_t d_int8_t;
 	uint8_t d_uint8_t;
-	int8_t d_int16_t;
-	uint8_t d_uint16_t;
-	int8_t d_int32_t;
-	uint8_t d_uint32_t;
-	int8_t d_int64_t;
-	uint8_t d_uint64_t;
+	int16_t d_int16_t;
+	uint16_t d_uint16_t;
+	int32_t d_int32_t;
+	uint32_t d_uint32_t;
+	int64_t d_int64_t;
+	uint64_t d_uint64_t;
 	FluffHashValue d_hash;
 };
 

@@ -28,16 +28,32 @@
 struct FluffRandom;
 
 /*
+ * Get the most random seed possible.
+ */
+uint32_t fluff_random_bestseed();
+
+/*
+ * Fill a buffer with random bits from system random source
+ * Return 0 on success, -1 otherwise
+ */
+int fluff_random_urandom(void * buf, size_t bufsize);
+
+/*
  * Initialize new generator
  * Return new generator on success, NULL on failure
  */
 struct FluffRandom * fluff_random_new(uint32_t seed);
 
 /*
- * Get random number
+ * Get a random 32 bit integer
  * Return the new random number
  */
-uint32_t fluff_random_random(struct FluffRandom *);
+uint32_t fluff_random_int(struct FluffRandom *);
+
+/*
+ * Get a random double in the range 0 <= x < 1
+ */
+double fluff_random_random(struct FluffRandom *);
 
 /*
  * Get number in range

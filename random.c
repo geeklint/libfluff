@@ -55,6 +55,52 @@ void fluff_random_setmm(const struct FluffMM * mm){
 	setup_mm();
 }
 
+#include <time.h>
+
+uint32_t fluff_random_bestseed(){
+	uint32_t result;
+	time_t timer;
+	union FluffData data;
+	uint64_t uninitialized = uninitialized; // suppress warnings
+
+	if (fluff_random_urandom(&result, sizeof(result))){
+		if (time(&timer) > 0){
+			if (sizeof(time_t) <= sizeof(uint32_t)){
+				data.d_uint32_t = timer;
+				result = (*fluff_hash_uint32_t)(data);
+			} else {
+				data.d_uint64_t = timer;
+				result = (*fluff_hash_uint64_t)(data);
+			}
+		} else if (uninitialized != 0){
+			data.d_uint64_t = uninitialized;
+			result = (*fluff_hash_uint64_t)(data);
+		} else {
+			// Hopefully we don't get here so last resort:
+			result = 0x83e58f34;
+		}
+	}
+	return result;
+}
+
+// IF POSIX
+
+#include <stdio.h>
+
+int fluff_random_urandom(void * buf, size_t bufsize){
+	FILE * urandom;
+	size_t red;
+
+	if (!(urandom = fopen("/dev/urandom", "r"))){
+		return -1;
+	}
+	red = fread(buf, 1, bufsize, urandom);
+	fclose(urandom);
+	return (red == bufsize) ? 0 : 1;
+}
+
+// ENDIF /* POSIX */
+
 struct FluffRandom * fluff_random_new(uint32_t seed){
     struct FluffRandom * self;
     int i;
@@ -83,7 +129,7 @@ static void generate_numbers(struct FluffRandom * self){
     }
 }
 
-uint32_t fluff_random_random(struct FluffRandom * self){
+uint32_t fluff_random_int(struct FluffRandom * self){
     int y;
     
     if (!self->index){
@@ -98,11 +144,22 @@ uint32_t fluff_random_random(struct FluffRandom * self){
     return y;
 }
 
+#define RR_2_26 67108864.0
+#define RR_2_53 9007199254740992.0
+
+double fluff_random_random(struct FluffRandom * self){
+	uint32_t a, b;
+
+	a = fluff_random_int(self) >> 5;
+	b = fluff_random_int(self) >> 6;
+	return (a * RR_2_26 + b) * (1.0 / RR_2_53);
+}
+
 int fluff_random_range(struct FluffRandom * self, int min, int max){
     int diff = max - min;
     int choice;
     
-    choice = (int) (((double) fluff_random_random(self)) / UINT32_MAX * diff);
+    choice = (int) (fluff_random_random(self) * diff);
     return choice + min;
 }
 
