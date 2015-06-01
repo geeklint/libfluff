@@ -160,7 +160,7 @@ struct FluffSocketIter * fluff_socket_select(
 
 /*
  * Get the next socket from the iter
- * Return 0 on succes, -1 on failure
+ * Return 0 on success, -1 on failure
  */
 int fluff_socket_iter_next(
 		struct FluffSocketIter *,

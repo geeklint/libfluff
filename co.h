@@ -26,14 +26,14 @@
 #include "bignum.h"
 
 enum FluffCOTypeID {
-	FluffCOTypeIDNone = 0,
-	FluffCOTypeIDBool = 1,
-	FluffCOTypeIDInt = 2,
-	FluffCOTypeIDLong = 3,
-	FluffCOTypeIDFloat = 4,
-	FluffCOTypeIDString = 5,
-	FluffCOTypeIDArray = 6,
-	FluffCOTypeIDDict = 7,
+	FluffCOTypeIDNone,
+	FluffCOTypeIDBool,
+	FluffCOTypeIDInt,
+	FluffCOTypeIDLong,
+	FluffCOTypeIDFloat,
+	FluffCOTypeIDString,
+	FluffCOTypeIDArray,
+	FluffCOTypeIDDict,
 };
 
 typedef uint_fast8_t FluffCONoneType;

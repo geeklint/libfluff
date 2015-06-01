@@ -18,6 +18,8 @@
 
 #include "path.h"
 
+#if 0
+
 /*
  * Get current working directory
  */
@@ -85,3 +87,5 @@ unsigned long fluff_path_split(char * path);
  * Return 0 on success, -1 on failure
  */
 int fluff_path_mkdir(char * path);
+
+#endif /* 0 */

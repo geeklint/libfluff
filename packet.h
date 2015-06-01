@@ -57,12 +57,6 @@ typedef (*FluffPacketHandler)(
 struct FluffPacketDefinition * fluff_packet_definition_new();
 
 /*
- * Load packet definitions from file
- * Return 0 on success, -1 on failure
- */
-int fluff_packet_load(struct FluffPacketDefinition *, char * filename);
-
-/*
  * Add a single packet definition
  * Return 0 on success, -1 on failure
  */

@@ -22,19 +22,36 @@
 #include <stdint.h>
 
 typedef uint32_t FluffFloat;
-typedef uint64_t FluffFloatDouble;
-typedef uint64_t FluffInt;
+typedef uint64_t FluffDouble;
+typedef uint16_t FluffShort;
+typedef uint32_t FluffInt;
+typedef uint64_t FluffLong;
+typedef uint16_t FluffUShort;
+typedef uint32_t FluffUInt;
+typedef uint64_t FluffULong;
 
 FluffFloat fluff_float_htof(float);
-
 float fluff_float_ftoh(FluffFloat);
 
-FluffFloatDouble fluff_float_double_htof(double);
+FluffDouble fluff_double_htof(double);
+double fluff_double_ftoh(FluffDouble);
 
-double fluff_float_double_ftoh(FluffFloatDouble);
+FluffShort fluff_short_htof(int16_t);
+int16_t fluff_short_ftoh(FluffShort);
 
-FluffInt fluff_int_htof(int64_t);
+FluffInt fluff_int_htof(int32_t);
+int32_t fluff_int_ftoh(FluffInt);
 
-int64_t fluff_int_ftoh(FluffInt);
+FluffLong fluff_long_htof(int64_t);
+int64_t fluff_long_ftoh(FluffLong);
+
+FluffUShort fluff_ushort_htof(uint16_t);
+uint16_t fluff_ushort_ftoh(FluffUShort);
+
+FluffUInt fluff_uint_htof(uint32_t);
+uint32_t fluff_uint_ftoh(FluffUInt);
+
+FluffULong fluff_ulong_htof(uint64_t);
+uint64_t fluff_ulong_ftoh(FluffULong);
 
 #endif /* FLUFF_STDFMTNUM_H_ */

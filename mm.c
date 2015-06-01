@@ -135,6 +135,9 @@ static void * cache_alloc(union FluffData data){
     void * block;
 
     type = data.d_ptr;
+    if (type == NULL){
+    	return NULL;
+    }
     if (type->cache){
         block = type->cache;
         type->cache = type->cache->next;
