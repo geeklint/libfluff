@@ -19,8 +19,6 @@
 #ifndef FLUFF_CO_H_
 #define FLUFF_CO_H_
 
-#include <stdint.h>
-
 #include "data.h"
 #include "mm.h"
 #include "bignum.h"

@@ -19,8 +19,6 @@
 #ifndef FLUFF_COSTRING_H_
 #define FLUFF_COSTRING_H_
 
-#include <wchar.h>
-
 #include "co.h"
 
 /*

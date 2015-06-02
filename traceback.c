@@ -18,6 +18,8 @@
 
 #include "traceback.h"
 
+#include <stdio.h>
+
 struct Traceback {
 	char * name;
 	char * message;

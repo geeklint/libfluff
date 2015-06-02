@@ -19,7 +19,7 @@
 #ifndef FLUFF_STDFMTNUM_H_
 #define FLUFF_STDFMTNUM_H_
 
-#include <stdint.h>
+#include "data.h"
 
 typedef uint32_t FluffFloat;
 typedef uint64_t FluffDouble;

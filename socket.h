@@ -19,9 +19,6 @@
 #ifndef FLUFF_SOCKET_H_
 #define FLUFF_SOCKET_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "data.h"
 
 /*

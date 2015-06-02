@@ -20,7 +20,9 @@
 #define FLUFF_PACKET_H_
 
 #include "data.h"
+#include "mm.h"
 #include "socket.h"
+#include "struct.h"
 
 /*
  * Packet type
@@ -42,12 +44,15 @@ struct FluffPacketHandle;
  */
 struct FluffPacketClient;
 
-typedef (*FluffPacketConnectionHandler)(
+/*
+ * Callback functions
+ */
+typedef void (*FluffPacketConnectionHandler)(
 		union FluffData, struct FluffPacketHandle *);
 
-typedef (*FluffPacketConnectionFailedHandler)(union FluffData);
+typedef void (*FluffPacketConnectionFailedHandler)(union FluffData);
 
-typedef (*FluffPacketHandler)(
+typedef void (*FluffPacketHandler)(
 		union FluffData, struct FluffPacketHandle *, struct FluffPacket *);
 
 /*
@@ -61,13 +66,40 @@ struct FluffPacketDefinition * fluff_packet_definition_new();
  * Return 0 on success, -1 on failure
  */
 int fluff_packet_add(
-		struct FluffPacketDefinition *, char id, char * def, int c, int s);
+		struct FluffPacketDefinition *, uint8_t id, struct FluffStruct *);
+
+/*
+ * Send a packet to a handle
+ */
+int fluff_packet_send(struct FluffPacketHandle *, uint8_t id, ...);
+int fluff_packet_send_n(struct FluffPacketHandle *, uint8_t id, ...);
+int fluff_packet_send_v(struct FluffPacketHandle *, uint8_t id, va_list args);
+int fluff_packet_send_vn(struct FluffPacketHandle *, uint8_t id, va_list args);
+int fluff_packet_send_s(
+		struct FluffPacketHandle *, uint8_t id, void * struct_);
+int fluff_packet_send_sn(
+		struct FluffPacketHandle *, uint8_t id, void * struct_);
+
+/*
+ * Get the packet id from packet
+ */
+uint8_t fluff_packet_packetid(struct FluffPacket *);
+
+/*
+ * Read a packet
+ */
+void fluff_packet_read(struct FluffPacket *, ...);
+void fluff_packet_read_n(struct FluffPacket *, ...);
+void fluff_packet_read_v(struct FluffPacket *, va_list args);
+void fluff_packet_read_vn(struct FluffPacket *, va_list args);
+void fluff_packet_read_s(struct FluffPacket *, void * struct_);
+void fluff_packet_read_sn(struct FluffPacket *, void * struct_);
 
 /*
  * Set the packet handler for the handle
  */
 void fluff_packet_set_handler(
-		struct FluffPacketHandle *, FluffPacketHandler, void * data);
+		struct FluffPacketHandle *, FluffPacketHandler, union FluffData extra);
 
 /*
  * Create a new server
@@ -77,7 +109,7 @@ void fluff_packet_server(
 		struct FluffPacketDefinition *,
 		struct FluffSocketAddr *,
 		FluffPacketConnectionHandler,
-		void * data);
+		union FluffData extra);
 
 /*
  * Create a new client
@@ -94,7 +126,7 @@ int fluff_packet_connect(
 		struct FluffSocketAddr *,
 		FluffPacketConnectionHandler,
 		FluffPacketConnectionFailedHandler,
-		void * data);
+		union FluffData extra);
 
 /*
  * Run client
@@ -102,5 +134,9 @@ int fluff_packet_connect(
  */
 int fluff_packet_client_run(struct FluffPacketClient *);
 
+/*
+ * Set the memory manager used by the packet submodule
+ */
+void fluff_packet_setmm(const struct FluffMM *);
 
 #endif /* FLUFF_PACKET_H_ */

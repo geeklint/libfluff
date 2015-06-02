@@ -19,8 +19,7 @@
 #ifndef FLUFF_STRUCT_H_
 #define FLUFF_STRUCT_H_
 
-#include "config/stdarg.h"
-#include "config/size_t.h"
+#include "data.h"
 
 /*
  * Format | Standard type | Native type   | Size

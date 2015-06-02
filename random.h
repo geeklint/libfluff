@@ -19,8 +19,7 @@
 #ifndef FLUFF_RANDOM_H_
 #define FLUFF_RANDOM_H_
 
-#include <stdlib.h>
-#include <stdint.h>
+#include "data.h"
 
 /*
  * Random object

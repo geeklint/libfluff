@@ -19,9 +19,7 @@
 #ifndef FLUFF_DATA_H_
 #define FLUFF_DATA_H_
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stddef.h>
+#include "config_types.h"
 
 /*
  * Value used for hash functions.

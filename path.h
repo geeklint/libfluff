@@ -19,7 +19,7 @@
 #ifndef FLUFF_PATH_H_
 #define FLUFF_PATH_H_
 
-#include <stdlib.h>
+#include "data.h"
 
 /*
  * Functions below which take a (char * buf, size_t maxlen) and return an int

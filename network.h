@@ -19,8 +19,6 @@
 #ifndef FLUFF_NETWORK_H_
 #define FLUFF_NETWORK_H_
 
-#include <stddef.h>
-
 #include "data.h"
 #include "mm.h"
 #include "socket.h"

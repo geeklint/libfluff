@@ -51,6 +51,7 @@ static void setup_mm(){
 		MM = fluff_mm_default;
 	}
     struct_size = MM->f_type_new(sizeof(struct FluffStruct));
+    mm_need_setup = 0;
 }
 
 #define ENSURE_MM if (mm_need_setup) setup_mm();
